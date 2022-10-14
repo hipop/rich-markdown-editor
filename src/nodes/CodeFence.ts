@@ -19,7 +19,12 @@ import sql from "refractor/lang/sql";
 import typescript from "refractor/lang/typescript";
 import yaml from "refractor/lang/yaml";
 
-import { Selection, TextSelection, Transaction } from "prosemirror-state";
+import {
+  NodeSelection,
+  Selection,
+  TextSelection,
+  Transaction,
+} from "prosemirror-state";
 import { textblockTypeInputRule } from "prosemirror-inputrules";
 import copy from "copy-to-clipboard";
 import Prism, { LANGUAGES } from "../plugins/Prism";
@@ -27,6 +32,7 @@ import toggleBlockType from "../commands/toggleBlockType";
 import isInCode from "../queries/isInCode";
 import Node from "./Node";
 import { ToastType } from "../types";
+import { NodeSpec } from "prosemirror-model";
 
 const PERSISTENCE_KEY = "rme-code-language";
 const DEFAULT_LANGUAGE = "javascript";
@@ -62,7 +68,7 @@ export default class CodeFence extends Node {
     return "code_fence";
   }
 
-  get schema() {
+  get schema(): NodeSpec {
     return {
       attrs: {
         language: {
@@ -89,28 +95,57 @@ export default class CodeFence extends Node {
         },
       ],
       toDOM: node => {
-        const button = document.createElement("button");
-        button.innerText = "Copy";
-        button.type = "button";
-        button.addEventListener("click", this.handleCopyToClipboard);
+        const createCopyButton = () => {
+          const button = document.createElement("button");
+          button.innerText = "Copy";
+          button.type = "button";
+          button.addEventListener("click", this.handleCopyToClipboard);
+          return button;
+        };
 
-        const select = document.createElement("select");
-        select.addEventListener("change", this.handleLanguageChange);
+        const createLanguageSelect = () => {
+          const select = document.createElement("select");
+          select.addEventListener("change", this.handleLanguageChange);
+          select.className = "language-select";
 
-        this.languageOptions.forEach(([key, label]) => {
-          const option = document.createElement("option");
-          const value = key === "none" ? "" : key;
-          option.value = value;
-          option.innerText = label;
-          option.selected = node.attrs.language === value;
-          select.appendChild(option);
-        });
+          this.languageOptions.forEach(([key, label]) => {
+            const option = document.createElement("option");
+            const value = key === "none" ? "" : key;
+            option.value = value;
+            option.innerText = label;
+            option.selected = node.attrs.language === value;
+            select.appendChild(option);
+          });
+          return select;
+        };
+
+        const readwriteToolbar = [createLanguageSelect(), createCopyButton()];
+        const readonlyToolbar = [createCopyButton()];
 
         return [
           "div",
-          { class: "code-block", "data-language": node.attrs.language },
-          ["div", { contentEditable: false }, select, button],
-          ["pre", ["code", { spellCheck: false }, 0]],
+          { class: "code-block-wrapper" },
+          [
+            "div",
+            {
+              class: "code-block-toolbar for-readwrite",
+              contentEditable: false,
+            },
+            ...readwriteToolbar,
+          ],
+          [
+            "div",
+            {
+              class: "code-block-toolbar for-readonly",
+              contentEditable: false,
+            },
+            ...readonlyToolbar,
+          ],
+          [
+            "div",
+            { class: "code-block", "data-language": node.attrs.language },
+            ["pre", ["code", { spellCheck: false }, 0]],
+          ],
         ];
       },
     };
@@ -153,6 +188,30 @@ export default class CodeFence extends Node {
 
         const { tr, selection } = state;
         dispatch(tr.insertText("  ", selection.from, selection.to));
+        return true;
+      },
+      "Ctrl-A": (state, dispatch) => {
+        const { tr, selection, doc } = state;
+        const { $head } = selection;
+        function getCodeBlockDepth() {
+          for (let d = $head.depth; d > 0; d--) {
+            if ($head.node(d).type === state.schema.nodes.code_block) {
+              return d;
+            }
+          }
+          return false;
+        }
+
+        const blockDepth = getCodeBlockDepth();
+        if (blockDepth === false) {
+          return false;
+        }
+
+        const start = $head.start(blockDepth as number);
+
+        const newSelection = NodeSelection.create(doc, start);
+
+        dispatch(tr.setSelection(newSelection));
         return true;
       },
     };

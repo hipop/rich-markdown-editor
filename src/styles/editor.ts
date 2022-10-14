@@ -554,6 +554,36 @@ export const StyledEditor = styled("div")<{
     }
   }
 
+  .code-block-wrapper {
+    .for-${props => (props.readOnly ? "readwrite" : "readonly")} {
+      display: none !important;
+    }
+    .code-block-toolbar {
+      display: flex;
+      flex-direction: row;
+      
+      > * {
+        border: none;
+        background: ${props => props.theme.codeBackground};
+        color: ${props => props.theme.code};
+        padding: 0.75em 1em;
+        border: 1px solid ${props => props.theme.codeBorder};
+      }
+      
+      
+      >:first-child {
+        border-top-left-radius: 4px;
+      }
+      >:last-child {
+        border-top-right-radius: 4px;
+      }
+    }
+    pre {
+      border-top-left-radius: 0;
+      margin-top: 0;
+    }
+  }
+  
   .code-block,
   .notice-block {
     position: relative;
