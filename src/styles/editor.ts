@@ -757,6 +757,7 @@ export const StyledEditor = styled("div")<{
 
     th {
       background: ${props => props.theme.tableHeaderBackground};
+      font-weight: normal;
     }
 
     td,
