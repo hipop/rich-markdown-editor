@@ -2,7 +2,8 @@ import Editor from "./index";
 import debounce from "lodash/debounce";
 import { Props } from "..";
 import React from "react";
-import { Story, Meta } from "@storybook/react/types-6-0";
+// eslint-disable-next-line prettier/prettier
+import type { Story, Meta } from "@storybook/react/types-6-0";
 
 export default {
   title: "Editor",
