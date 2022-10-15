@@ -108,4 +108,6 @@ const Shortcut = styled.span`
   text-align: right;
 `;
 
-export default withTheme(BlockMenuItem);
+const value: ReturnType<typeof withTheme> = withTheme(BlockMenuItem);
+
+export default value;

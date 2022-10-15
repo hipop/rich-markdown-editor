@@ -55,7 +55,7 @@ export default class ComponentView {
       isSelected: this.isSelected,
       isEditable: this.view.editable,
       getPos: this.getPos,
-    });
+    }) as React.ReactNode;
 
     ReactDOM.render(
       <ThemeProvider theme={theme}>{children}</ThemeProvider>,

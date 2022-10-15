@@ -137,7 +137,7 @@ export type Props = {
   uploadImage?: (file: File) => Promise<string>;
   onBlur?: () => void;
   onFocus?: () => void;
-  onSave?: ({ done: boolean }) => void;
+  onSave?: ({ done }: { done: boolean }) => void;
   onCancel?: () => void;
   onChange?: (value: () => string) => void;
   onImageUploadStart?: () => void;
@@ -505,7 +505,7 @@ class RichMarkdownEditor extends React.PureComponent<Props, State> {
 
     return EditorState.create({
       schema: this.schema,
-      doc,
+      doc: doc ?? undefined, // for some reason TS gets mad about null vs undefined so this
       plugins: [
         ...this.plugins,
         ...this.keymaps,

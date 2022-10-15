@@ -134,6 +134,8 @@ export default class PasteHandler extends Extension {
               const paste = this.editor.pasteParser.parse(
                 normalizePastedMarkdown(text)
               );
+              if (!paste) throw new Error("paste is null");
+
               const slice = paste.slice(0);
 
               const transaction = view.state.tr.replaceSelection(slice);
