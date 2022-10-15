@@ -360,7 +360,7 @@ export const StyledEditor = styled("div")<{
   blockquote {
     margin: 0;
     padding-left: 1.5em;
-    font-style: italic;
+    font-style: normal;
     overflow: hidden;
     position: relative;
 
