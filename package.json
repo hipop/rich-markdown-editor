@@ -1,6 +1,6 @@
 {
-  "name": "@notea/rich-markdown-editor",
-  "description": "A rich text editor with Markdown shortcuts",
+  "name": "@hipop/rich-markdown-editor",
+  "description": "A rich text editor with Markdown shortcuts, add video uploads",
   "version": "11.22.0",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -120,7 +120,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/notea-org/rich-markdown-editor.git"
+    "url": "git+https://github.com/hipop/rich-markdown-editor.git"
   },
   "keywords": [
     "editor",
@@ -130,7 +130,11 @@
   ],
   "author": "Tom Moor <tom.moor@gmail.com>",
   "bugs": {
-    "url": "https://github.com/notea-org/rich-markdown-editor/issues"
+    "url": "https://github.com/hipop/rich-markdown-editor/issues"
   },
-  "homepage": "https://github.com/notea-org/rich-markdown-editor#readme"
+  "homepage": "https://github.com/hipop/rich-markdown-editor#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }
