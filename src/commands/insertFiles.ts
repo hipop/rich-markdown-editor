@@ -23,7 +23,7 @@ const insertFiles = function(
   }
 ): void {
   // filter to only include image files
-  const images = files.filter(file => /image/i.test(file.type));
+  const images = files.filter(file => /image/i.test(file.type) || 'video/mp4' === file.type || 'video/webm' === file.type);
   if (images.length === 0) return;
 
   const {
@@ -79,8 +79,9 @@ const insertFiles = function(
         // otherwise, insert it at the placeholder's position, and remove
         // the placeholder itself
         const newImg = new Image();
+        const newVideo = window.document.createElement('video', {preload:'metadata'} as ElementCreationOptions)
 
-        newImg.onload = () => {
+        newVideo.onloadedmetadata = newImg.onload = () => {
           const result = findPlaceholder(view.state, id);
 
           // if the content around the placeholder has been deleted
@@ -90,29 +91,46 @@ const insertFiles = function(
           }
 
           const [from, to] = result;
-          view.dispatch(
-            view.state.tr
-              .replaceWith(from, to || from, schema.nodes.image.create({ src }))
-              .setMeta(uploadPlaceholderPlugin, { remove: { id } })
-          );
+          // wrapInList(listType)(state, dispatch);
+          
+          // if(to === from){
+          //   view.dispatch(
+          //     view.state.tr
+          //       .replaceWith(from, to || from, schema.nodes.image.create({ src }))              
+          //       .setMeta(uploadPlaceholderPlugin, { remove: { id } })
+          //   );
+          // } else {
+          //   view.dispatch(
+          //     view.state.tr
+          //       .insert(to || from, schema.nodes.image.create({ src }))
+          //       .setMeta(uploadPlaceholderPlugin, { remove: { id } })
+          //   );
+          // }
 
           // If the users selection is still at the image then make sure to select
           // the entire node once done. Otherwise, if the selection has moved
           // elsewhere then we don't want to modify it
           if (view.state.selection.from === from) {
             view.dispatch(
-              view.state.tr.setSelection(
-                new NodeSelection(view.state.doc.resolve(from))
-              )
+              view.state.tr
+                .replaceWith(from, to || from, schema.nodes.image.create({ src }))              
+                .setMeta(uploadPlaceholderPlugin, { remove: { id } })
+            );
+          } else {
+            view.dispatch(
+              view.state.tr
+                .insert(to || from, schema.nodes.image.create({ src }))
+                .setMeta(uploadPlaceholderPlugin, { remove: { id } })
             );
           }
         };
 
-        newImg.onerror = error => {
+
+        newVideo.onerror = newImg.onerror = error => {
           throw error;
         };
 
-        newImg.src = src;
+        newVideo.src = newImg.src = src;        
       })
       .catch(error => {
         console.error(error);

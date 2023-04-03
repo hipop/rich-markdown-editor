@@ -111,9 +111,9 @@ export default function blockMenuItems(
     },
     {
       name: "image",
-      title: dictionary.image,
+      title: dictionary.image + ' / Video',
       icon: ImageIcon,
-      keywords: "picture photo",
+      keywords: "picture photo video mp4",
     },
     {
       name: "link",

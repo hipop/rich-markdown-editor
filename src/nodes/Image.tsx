@@ -8,6 +8,7 @@ import getDataTransferFiles from "../lib/getDataTransferFiles";
 import uploadPlaceholderPlugin from "../lib/uploadPlaceholder";
 import insertFiles from "../commands/insertFiles";
 import Node from "./Node";
+import ImageRule from "../rules/image";
 
 /**
  * Matches following attributes in Markdown-typed image: [, alt, src, class]
@@ -18,6 +19,27 @@ import Node from "./Node";
  * ![Lorem](image.jpg "class") -> [, "Lorem", "image.jpg", "small"]
  */
 const IMAGE_INPUT_REGEX = /!\[(?<alt>[^\]\[]*?)]\((?<filename>[^\]\[]*?)(?=\“|\))\“?(?<layoutclass>[^\]\[\”]+)?\”?\)$/;
+
+/**
+ * 从src判别是否是浏览器支持的视频
+ * @param src src
+ * @returns 
+ */
+const isVideo = (src:string):boolean => {
+  if(!src) return false
+  const videoTypes:string[] = ['.mp4', '.webm']
+  const videoMimes:string[] = ['video/mp4', 'video/webm']
+  const lowSrc = src.toLocaleLowerCase()
+  let isMp4 = (videoTypes.filter(x => lowSrc.endsWith(x))).length > 0
+  if(src.startsWith('blob:') && window.XMLHttpRequest){
+    const xhr = new XMLHttpRequest()
+    xhr.open('GET', src, false)
+    xhr.send(null)
+    const mime = xhr.getResponseHeader('content-type') || ''
+    isMp4 = videoMimes.includes(mime.toLocaleLowerCase())
+  }
+  return isMp4
+}
 
 const uploadPlugin = options =>
   new Plugin({
@@ -46,8 +68,8 @@ const uploadPlugin = options =>
             tr.deleteSelection();
           }
           const pos = tr.selection.from;
-
-          insertFiles(view, event, pos, files, options);
+          // 不要让insertFiles阻止下一步动作
+          insertFiles(view, {preventDefault:()=>{}} as Event, pos, files, options);
           return true;
         },
         drop(view, event: DragEvent): boolean {
@@ -60,7 +82,7 @@ const uploadPlugin = options =>
 
           // filter to only include image files
           const files = getDataTransferFiles(event).filter(file =>
-            /image/i.test(file.type)
+            /image/i.test(file.type) || 'video/mp4' === file.type || 'video/webm' === file.type
           );
           if (files.length === 0) {
             return false;
@@ -122,7 +144,7 @@ export default class Image extends Node {
 
   get schema() {
     return {
-      inline: true,
+      inline: false,
       attrs: {
         src: {},
         alt: {
@@ -135,11 +157,13 @@ export default class Image extends Node {
           default: null,
         },
       },
-      content: "text*",
-      marks: "",
-      group: "inline",
-      selectable: true,
-      draggable: true,
+      // content: "",
+      // marks: "",
+      // group: "blcok",
+      content: "inline*",
+      group: "block",
+      selectable: false,
+      draggable: false,
       parseDOM: [
         {
           tag: "div[class~=image]",
@@ -170,17 +194,27 @@ export default class Image extends Node {
           },
         },
       ],
-      toDOM: node => {
+      toDOM: async node => {
         const className = node.attrs.layoutClass
           ? `image image-${node.attrs.layoutClass}`
           : "image";
+        
+        // 如果是mp4后缀，则构造一个特殊的html来显示视频
+        const src: string = node.attrs?.src || ''
+        const srcIsVideo = isVideo(src);
+        const tagType = srcIsVideo ? 'video' : 'img'
+
+        if(srcIsVideo){
+          node.attrs = {...node.attrs, controls: true, preload: 'metadata'}
+        }
         return [
           "div",
           {
             class: className,
           },
-          ["img", { ...node.attrs, contentEditable: false }],
+          [tagType, { ...node.attrs, contentEditable: false }],
           ["p", { class: "caption" }, 0],
+          ["br"]
         ];
       },
     };
@@ -253,6 +287,42 @@ export default class Image extends Node {
     const { alt, src, title, layoutClass } = props.node.attrs;
     const className = layoutClass ? `image image-${layoutClass}` : "image";
 
+
+    const ImgOrVideo = props => {
+      const {alt, src, title, layoutClass} = props
+      
+      // 如果是mp4后缀，则构造一个特殊的html来显示视频（不一定能正确播放所有制式的mp4文件，视乎浏览器支持，暂不处理）
+      const srcIsVideo = isVideo(src);
+      if(srcIsVideo){
+        return <div>
+          <video controls preload='metadata' src={src} title={title} style={{position:'relative',zIndex:1}}></video>
+          <img alt={alt} style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            left: 0,
+            top: 0,
+            zIndex: 0,
+            background: 'red',
+          }} />
+        </div>
+      }
+      return <img src={src} alt={alt} title={title} />
+      // return <ImageZoom
+      //   image={{
+      //     src,
+      //     alt,
+      //     title,
+      //   }}
+      //   defaultStyles={{
+      //     overlay: {
+      //       backgroundColor: layoutClass,
+      //     },
+      //   }}
+      //   shouldRespectMaxDimension
+      // />
+    }
+
     return (
       <div contentEditable={false} className={className}>
         <ImageWrapper
@@ -265,19 +335,12 @@ export default class Image extends Node {
               onClick={this.handleDownload(props)}
             />
           </Button>
-          <ImageZoom
-            image={{
-              src,
-              alt,
-              title,
-            }}
-            defaultStyles={{
-              overlay: {
-                backgroundColor: theme.background,
-              },
-            }}
-            shouldRespectMaxDimension
-          />
+          <ImgOrVideo
+            src={src}
+            alt={alt}
+            title={title}
+            layoutClass={theme.background}
+          ></ImgOrVideo>
         </ImageWrapper>
         <Caption
           onKeyDown={this.handleKeyDown(props)}
@@ -291,6 +354,7 @@ export default class Image extends Node {
         >
           {alt}
         </Caption>
+        <br />
       </div>
     );
   };
@@ -376,7 +440,7 @@ export default class Image extends Node {
         // create an input element and click to trigger picker
         const inputElement = document.createElement("input");
         inputElement.type = "file";
-        inputElement.accept = "image/*";
+        inputElement.accept = "image/*, video/mp4";
         inputElement.onchange = (event: Event) => {
           const files = getDataTransferFiles(event);
           insertFiles(view, event, state.selection.from, files, {
@@ -435,6 +499,10 @@ export default class Image extends Node {
   get plugins() {
     return [uploadPlaceholderPlugin, uploadPlugin(this.options)];
   }
+
+  get rulePlugins() {
+    return [ImageRule]
+  }
 }
 
 const Button = styled.button`
@@ -492,7 +560,7 @@ const Caption = styled.p`
   }
 `;
 
-const ImageWrapper = styled.span`
+const ImageWrapper = styled.div`
   line-height: 0;
   display: inline-block;
   position: relative;

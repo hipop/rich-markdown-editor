@@ -290,9 +290,9 @@ export const StyledEditor = styled("div")<{
     }
   }
 
-  .placeholder:before {
+  .ProseMirror-trailingBreak:before, .placeholder:before {
     display: block;
-    opacity: 0;
+    opacity: 0.8;
     transition: opacity 150ms ease-in-out;
     content: ${props => (props.readOnly ? "" : "attr(data-empty-text)")};
     pointer-events: none;

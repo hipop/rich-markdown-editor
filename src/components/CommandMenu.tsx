@@ -522,7 +522,7 @@ class CommandMenu<T extends MenuItem = MenuItem> extends React.Component<
                 type="file"
                 ref={this.inputRef}
                 onChange={this.handleImagePicked}
-                accept="image/*"
+                accept="image/*, video/mp4"
               />
             </VisuallyHidden>
           )}
