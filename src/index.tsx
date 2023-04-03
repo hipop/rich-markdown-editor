@@ -540,7 +540,7 @@ class RichMarkdownEditor extends React.PureComponent<Props, State> {
     const view = new EditorView(this.element, {
       state: this.createState(this.props.value),
       editable: () => !this.props.readOnly,
-      nodeViews: this.nodeViews,
+      nodeViews: this.nodeViews as any,
       handleDOMEvents: this.props.handleDOMEvents,
       dispatchTransaction: function(transaction) {
         // callback is bound to have the view instance as its this binding
