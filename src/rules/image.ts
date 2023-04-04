@@ -48,7 +48,7 @@ export default function image(md: MarkdownIt) {
       }
       a.push(b)
       return a
-    }, new Array<Token>)
+    }, new Array<Token>())
     console.log('这里是自定义的图片规则2:', tokens)
     state.tokens = tokens
     
