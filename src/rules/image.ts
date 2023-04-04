@@ -5,7 +5,7 @@ import Token from "markdown-it/lib/token";
 export default function image(md: MarkdownIt) {
   md.core.ruler.after("inline", "image", state => {
     let tokens = state.tokens;
-    console.log('这里是自定义的图片规则', tokens, state);
+    // console.log('这里是自定义的图片规则', tokens, state);
 
 
     let removePArr:Token[] = []
@@ -49,7 +49,7 @@ export default function image(md: MarkdownIt) {
       a.push(b)
       return a
     }, new Array<Token>())
-    console.log('这里是自定义的图片规则2:', tokens)
+    // console.log('这里是自定义的图片规则2:', tokens)
     state.tokens = tokens
     
     return false;
