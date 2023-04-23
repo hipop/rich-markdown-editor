@@ -3,7 +3,6 @@ import { DownloadIcon } from "outline-icons";
 import { Plugin, TextSelection, NodeSelection } from "prosemirror-state";
 import { InputRule } from "prosemirror-inputrules";
 import styled from "styled-components";
-import ImageZoom from "react-medium-image-zoom";
 import getDataTransferFiles from "../lib/getDataTransferFiles";
 import uploadPlaceholderPlugin from "../lib/uploadPlaceholder";
 import insertFiles from "../commands/insertFiles";
@@ -18,28 +17,28 @@ import ImageRule from "../rules/image";
  * ![](image.jpg "class") -> [, "", "image.jpg", "small"]
  * ![Lorem](image.jpg "class") -> [, "Lorem", "image.jpg", "small"]
  */
-const IMAGE_INPUT_REGEX = /!\[(?<alt>[^\]\[]*?)]\((?<filename>[^\]\[]*?)(?=\“|\))\“?(?<layoutclass>[^\]\[\”]+)?\”?\)$/;
+const IMAGE_INPUT_REGEX = /!\[(?<alt>[^\]\[]*?)]\((?<filename>[^\]\[]*?)(?=\"|\))\"?(?<layoutclass>[^\]\[\"]+)?\"?\)$/;
 
 /**
  * 从src判别是否是浏览器支持的视频
  * @param src src
- * @returns 
+ * @returns
  */
-const isVideo = (src:string):boolean => {
-  if(!src) return false
-  const videoTypes:string[] = ['.mp4', '.webm']
-  const videoMimes:string[] = ['video/mp4', 'video/webm']
-  const lowSrc = src.toLocaleLowerCase()
-  let isMp4 = (videoTypes.filter(x => lowSrc.endsWith(x))).length > 0
-  if(src.startsWith('blob:') && window.XMLHttpRequest){
-    const xhr = new XMLHttpRequest()
-    xhr.open('GET', src, false)
-    xhr.send(null)
-    const mime = xhr.getResponseHeader('content-type') || ''
-    isMp4 = videoMimes.includes(mime.toLocaleLowerCase())
+const isVideo = (src: string): boolean => {
+  if (!src) return false;
+  const videoTypes: string[] = [".mp4", ".webm"];
+  const videoMimes: string[] = ["video/mp4", "video/webm"];
+  const lowSrc = src.toLocaleLowerCase();
+  let isMp4 = videoTypes.filter(x => lowSrc.endsWith(x)).length > 0;
+  if (src.startsWith("blob:") && window.XMLHttpRequest) {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", src, false);
+    xhr.send(null);
+    const mime = xhr.getResponseHeader("content-type") || "";
+    isMp4 = videoMimes.includes(mime.toLocaleLowerCase());
   }
-  return isMp4
-}
+  return isMp4;
+};
 
 const uploadPlugin = options =>
   new Plugin({
@@ -69,7 +68,17 @@ const uploadPlugin = options =>
           }
           const pos = tr.selection.from;
           // 不要让insertFiles阻止下一步动作
-          insertFiles(view, {preventDefault:()=>{}} as Event, pos, files, options);
+          insertFiles(
+            view,
+            {
+              preventDefault: () => {
+                /* empty function */
+              },
+            } as Event,
+            pos,
+            files,
+            options
+          );
           return true;
         },
         drop(view, event: DragEvent): boolean {
@@ -81,8 +90,11 @@ const uploadPlugin = options =>
           }
 
           // filter to only include image files
-          const files = getDataTransferFiles(event).filter(file =>
-            /image/i.test(file.type) || 'video/mp4' === file.type || 'video/webm' === file.type
+          const files = getDataTransferFiles(event).filter(
+            file =>
+              /image/i.test(file.type) ||
+              "video/mp4" === file.type ||
+              "video/webm" === file.type
           );
           if (files.length === 0) {
             return false;
@@ -198,14 +210,14 @@ export default class Image extends Node {
         const className = node.attrs.layoutClass
           ? `image image-${node.attrs.layoutClass}`
           : "image";
-        
-        // 如果是mp4后缀，则构造一个特殊的html来显示视频
-        const src: string = node.attrs?.src || ''
-        const srcIsVideo = isVideo(src);
-        const tagType = srcIsVideo ? 'video' : 'img'
 
-        if(srcIsVideo){
-          node.attrs = {...node.attrs, controls: true, preload: 'metadata'}
+        // 如果是mp4后缀，则构造一个特殊的html来显示视频
+        const src: string = node.attrs?.src || "";
+        const srcIsVideo = isVideo(src);
+        const tagType = srcIsVideo ? "video" : "img";
+
+        if (srcIsVideo) {
+          node.attrs = { ...node.attrs, controls: true, preload: "metadata" };
         }
         return [
           "div",
@@ -214,7 +226,7 @@ export default class Image extends Node {
           },
           [tagType, { ...node.attrs, contentEditable: false }],
           ["p", { class: "caption" }, 0],
-          ["br"]
+          ["br"],
         ];
       },
     };
@@ -287,27 +299,37 @@ export default class Image extends Node {
     const { alt, src, title, layoutClass } = props.node.attrs;
     const className = layoutClass ? `image image-${layoutClass}` : "image";
 
-
     const ImgOrVideo = props => {
-      const {alt, src, title, layoutClass} = props
-      
+      const { alt, src, title, layoutClass } = props;
+
       // 如果是mp4后缀，则构造一个特殊的html来显示视频（不一定能正确播放所有制式的mp4文件，视乎浏览器支持，暂不处理）
       const srcIsVideo = isVideo(src);
-      if(srcIsVideo){
-        return <div>
-          <video controls preload='metadata' src={src} title={title} style={{position:'relative',zIndex:1}}></video>
-          <img alt={alt} style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            left: 0,
-            top: 0,
-            zIndex: 0,
-            background: 'red',
-          }} />
-        </div>
+      if (srcIsVideo) {
+        return (
+          <div>
+            <video
+              controls
+              preload="metadata"
+              src={src}
+              title={title}
+              style={{ position: "relative", zIndex: 1 }}
+            ></video>
+            <img
+              alt={alt}
+              style={{
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                left: 0,
+                top: 0,
+                zIndex: 0,
+                background: "red",
+              }}
+            />
+          </div>
+        );
       }
-      return <img src={src} alt={alt} title={title} />
+      return <img src={src} alt={alt} title={title} />;
       // return <ImageZoom
       //   image={{
       //     src,
@@ -321,7 +343,7 @@ export default class Image extends Node {
       //   }}
       //   shouldRespectMaxDimension
       // />
-    }
+    };
 
     return (
       <div contentEditable={false} className={className}>
@@ -501,7 +523,7 @@ export default class Image extends Node {
   }
 
   get rulePlugins() {
-    return [ImageRule]
+    return [ImageRule];
   }
 }
 

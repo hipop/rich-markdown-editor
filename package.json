@@ -1,7 +1,7 @@
 {
   "name": "@hipop/rich-markdown-editor",
   "description": "A rich text editor with Markdown shortcuts, I added video uploads and optimized some of the experience based on the original version.",
-  "version": "11.22.3",
+  "version": "11.22.5",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "license": "BSD-3-Clause",
