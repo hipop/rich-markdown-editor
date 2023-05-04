@@ -3,11 +3,13 @@ import { DownloadIcon } from "outline-icons";
 import { Plugin, TextSelection, NodeSelection } from "prosemirror-state";
 import { InputRule } from "prosemirror-inputrules";
 import styled from "styled-components";
+// import ImageZoom from "react-medium-image-zoom";
 import getDataTransferFiles from "../lib/getDataTransferFiles";
 import uploadPlaceholderPlugin from "../lib/uploadPlaceholder";
 import insertFiles from "../commands/insertFiles";
 import Node from "./Node";
 import ImageRule from "../rules/image";
+import Viewer from "react-viewer";
 
 /**
  * Matches following attributes in Markdown-typed image: [, alt, src, class]
@@ -300,7 +302,12 @@ export default class Image extends Node {
     const className = layoutClass ? `image image-${layoutClass}` : "image";
 
     const ImgOrVideo = props => {
-      const { alt, src, title, layoutClass } = props;
+      const { alt, src, title } = props;
+      const [visible, setVisible] = React.useState(false);
+      const [domReady, setDomReady] = React.useState(false);
+      React.useEffect(() => {
+        setDomReady(true);
+      }, []);
 
       // 如果是mp4后缀，则构造一个特殊的html来显示视频（不一定能正确播放所有制式的mp4文件，视乎浏览器支持，暂不处理）
       const srcIsVideo = isVideo(src);
@@ -329,20 +336,38 @@ export default class Image extends Node {
           </div>
         );
       }
-      return <img src={src} alt={alt} title={title} />;
-      // return <ImageZoom
-      //   image={{
-      //     src,
-      //     alt,
-      //     title,
-      //   }}
-      //   defaultStyles={{
-      //     overlay: {
-      //       backgroundColor: layoutClass,
-      //     },
-      //   }}
-      //   shouldRespectMaxDimension
-      // />
+      // return <img src={src} alt={alt} title={title} />;
+      return (
+        <div>
+          <img
+            src={src}
+            alt={alt}
+            title={title}
+            onClick={() => {
+              setVisible(true);
+            }}
+            style={{ cursor: "zoom-in" }}
+          />
+          {domReady && visible ? (
+            <Viewer
+              visible={visible}
+              onClose={() => {
+                setVisible(false);
+              }}
+              images={[{ src, alt }]}
+              noNavbar
+              noToolbar
+              noFooter
+            />
+          ) : null}
+        </div>
+      );
+      // return (
+      //   <ImageZoom
+      //     image={{ src, alt, title }}
+      //     defaultStyles={{ overlay: { backgroundColor: layoutClass } }}
+      //   ></ImageZoom>
+      // );
     };
 
     return (

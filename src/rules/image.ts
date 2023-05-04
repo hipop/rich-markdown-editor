@@ -53,11 +53,11 @@ import Token from "markdown-it/lib/token";
 export default function image(md: MarkdownIt) {
   md.core.ruler.after("inline", "image", state => {
     const tokens = state.tokens;
-    // console.log("处理之前，", tokens);
+    console.log("处理之前，", tokens);
     // 即将要删除的标签
     const removePArr: Token[] = [];
     // const releaseImgArr: Token[] = [];
-    let finalTokens = new Array<Token>();
+    let newsTokens = new Array<Token>();
     for (let index = 0; index < tokens.length; index++) {
       const token = tokens[index];
       // 我们将通过一系列复杂的条件判断来严格的判定即将插入的是一个图片
@@ -87,14 +87,19 @@ export default function image(md: MarkdownIt) {
         temp2DArr.forEach(current => {
           if (current.length === 1 && current[0].type === "image") {
             // 插入 <img/>
-            finalTokens.push(current[0]);
+            newsTokens.push(current[0]);
           } else {
             // 插入 <p><inline>something</inline></p>
-            finalTokens.push(new Token("paragraph_open", "p", -1));
+            newsTokens.push(new Token("paragraph_open", "p", -1));
             const inlineToken = new Token("inline", "", 0);
-            inlineToken.children = current as Token[];
-            finalTokens.push(inlineToken);
-            finalTokens.push(new Token("paragraph_close", "p", 1));
+            // 删掉仅仅是p>br的这种
+            if (current.length === 1 && current[0].type === "softbreak") {
+              inlineToken.children = [];
+            } else {
+              inlineToken.children = current as Token[];
+            }
+            newsTokens.push(inlineToken);
+            newsTokens.push(new Token("paragraph_close", "p", 1));
           }
         });
 
@@ -115,13 +120,45 @@ export default function image(md: MarkdownIt) {
         }
       } else {
         // 如果没有包含图片，那么原样输出
-        finalTokens.push(token);
+        newsTokens.push(token);
       }
     }
     // 删除(过滤)掉部分token
-    finalTokens = finalTokens.filter(x => !removePArr.includes(x));
-    // console.log("处理之后，", tokens);
+    newsTokens = newsTokens.filter(x => !removePArr.includes(x));
+    console.log("处理之后，", newsTokens);
+
+    const finalTokens = new Array<Token>();
+    // @todo 在 图片之前和之后添加换行
+    for (let index = 0; index < newsTokens.length; index++) {
+      const curToken = newsTokens[index];
+      const preToken = newsTokens[index - 1];
+      const nextToken = newsTokens[index + 1];
+      if (curToken.type === "image") {
+        if (!preToken) {
+          const inlineToken = new Token("inline", "", 0);
+          inlineToken.children = [];
+          finalTokens.push(
+            new Token("paragraph_open", "p", -1),
+            inlineToken,
+            new Token("paragraph_close", "p", 1)
+          );
+        }
+        finalTokens.push(curToken);
+        if (!nextToken) {
+          const inlineToken = new Token("inline", "", 0);
+          inlineToken.children = [];
+          finalTokens.push(
+            new Token("paragraph_open", "p", -1),
+            inlineToken,
+            new Token("paragraph_close", "p", 1)
+          );
+        }
+      } else {
+        finalTokens.push(curToken);
+      }
+    }
     state.tokens = finalTokens;
+    console.log("最终的，", finalTokens);
 
     return false;
   });
