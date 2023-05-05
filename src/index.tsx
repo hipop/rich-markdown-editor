@@ -169,7 +169,7 @@ type Step = {
   slice?: Slice;
 };
 
-class RichMarkdownEditor extends React.PureComponent<Props, State> {
+export class RichMarkdownEditor extends React.PureComponent<Props, State> {
   static defaultProps = {
     defaultValue: "",
     dir: "auto",
